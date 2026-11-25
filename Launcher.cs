@@ -32,6 +32,8 @@ public sealed class Settings
     public List<TenantProfile> Profiles { get; set; } = [];
     public string InstallDirectory { get; set; } = "";
     public WindowPreferences Window { get; set; } = new();
+    public List<string> ApplicationOrder { get; set; } = ["Navigator", "Designer", "Console"];
+    public List<string> HiddenApplications { get; set; } = [];
 }
 public sealed class WindowPreferences
 {

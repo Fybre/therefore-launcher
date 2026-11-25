@@ -24,6 +24,8 @@ Profiles and the installation folder override are saved to `%LOCALAPPDATA%\There
 
 ## Compact mode
 
+Use **More → Application icons…** to reorder Navigator, Designer and Console with the up/down buttons, or uncheck an app to hide it. Save applies the choices to the full-window tiles and compact app menus and remembers them across restarts. **Restore defaults** shows all three apps in their original order. In compact mode, double-click and Enter launch the first visible app. Hiding an icon does not uninstall the application.
+
 Click the collapse icon in the header (tooltip **Compact mode**) to switch to a narrow tenant strip. Tenant names
 are shown without connection details. Right-click a tenant or click its **⋯**
 button to choose Navigator, Designer or Console using the actual application

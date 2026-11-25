@@ -70,7 +70,7 @@ public sealed partial class MainWindow
             System.Windows.Automation.AutomationProperties.SetName(modeToggle, compact ? "Full window" : "Compact mode");
             caption.FontSize = compact ? 14 : 21;
             title.Padding = compact ? new Thickness(10, 7, 10, 7) : new Thickness(24, 14, 24, 14);
-            profiles.ToolTip = compact ? "Double-click or Enter: Navigator. Right-click or ⋯: choose app. Drag to reorder." : "Drag tenants to reorder, or press Ctrl+Up / Ctrl+Down.";
+            profiles.ToolTip = compact ? "Double-click or Enter: first visible app. Right-click or ⋯: choose app. Drag to reorder." : "Drag tenants to reorder, or press Ctrl+Up / Ctrl+Down.";
         }
         modeToggle.Click += (_, _) =>
         {
@@ -86,25 +86,30 @@ public sealed partial class MainWindow
 
         var appMenu = new ContextMenu();
         var menuTenant = new MenuItem { IsEnabled = false, FontWeight = FontWeights.SemiBold };
+        void RefreshAppMenu()
+        {
+        appMenu.Items.Clear();
         appMenu.Items.Add(menuTenant);
         appMenu.Items.Add(new Separator());
-        foreach (var app in new[] { "Navigator", "Designer", "Console" })
+        foreach (var app in VisibleApplications())
         {
             var item = new MenuItem
             {
                 Header = app,
                 Style = (Style)Resources["LargeAppMenuItemStyle"],
                 Icon = new Image { Source = new BitmapImage(new Uri($"pack://application:,,,/assets/icons/{app.ToLowerInvariant()}.png")), Width = 32, Height = 32 },
-                InputGestureText = app == "Navigator" ? "Enter" : ""
+                InputGestureText = app == VisibleApplications().FirstOrDefault() ? "Enter" : ""
             };
             item.Click += (_, _) => Launch(app); appMenu.Items.Add(item);
         }
         appMenu.Items.Add(new Separator());
         var edit = new MenuItem { Header = "Edit profile…" };
         edit.Click += (_, _) => { if (profiles.SelectedItem is TenantProfile p) Edit(p); }; appMenu.Items.Add(edit);
+        }
         profiles.ContextMenu = appMenu;
         appMenu.Opened += (_, _) =>
         {
+            RefreshAppMenu();
             menuTenant.Header = (profiles.SelectedItem as TenantProfile)?.Name ?? "Select a tenant";
             foreach (var item in appMenu.Items.OfType<MenuItem>().Where(item => item != menuTenant)) item.IsEnabled = profiles.SelectedItem is TenantProfile;
         };
@@ -128,13 +133,13 @@ public sealed partial class MainWindow
             if (!settings.Window.CompactMode || e.ChangedButton != MouseButton.Left || IsMenuButton(e.OriginalSource as DependencyObject)) return;
             if (ItemsControl.ContainerFromElement(profiles, e.OriginalSource as DependencyObject) is ListBoxItem row)
             {
-                profiles.SelectedItem = row.DataContext; Launch("Navigator"); e.Handled = true;
+                profiles.SelectedItem = row.DataContext; LaunchDefaultApplication(); e.Handled = true;
             }
         };
         profiles.PreviewKeyDown += (_, e) =>
         {
             if (settings.Window.CompactMode && e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None && !IsMenuButton(Keyboard.FocusedElement as DependencyObject))
-            { Launch("Navigator"); e.Handled = true; }
+            { LaunchDefaultApplication(); e.Handled = true; }
         };
         ApplyMode();
     }

@@ -9,6 +9,7 @@ public sealed partial class MainWindow : Window
 {
     readonly Settings settings = new();
     readonly ListBox profiles = new();
+    readonly System.Windows.Controls.Primitives.UniformGrid apps = new() { Columns = 3 };
     readonly TextBlock heading = new() { FontSize = 28, FontWeight = FontWeights.SemiBold };
     readonly TextBlock address = new() { TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 24) };
     readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap, Margin = new(0, 24, 0, 12) };
@@ -52,6 +53,8 @@ public sealed partial class MainWindow : Window
         menu.Items.Add(new Separator());
         var folderItem = new MenuItem { Header = "Installation folder…" };
         folderItem.Click += (_, _) => ChooseFolder(); menu.Items.Add(folderItem);
+        var appSettings = new MenuItem { Header = "Application icons…" };
+        appSettings.Click += (_, _) => EditApplications(); menu.Items.Add(appSettings);
         var moreAction = CompactAction("More ⋯", "Tenant actions and settings", (sender, _) =>
         {
             removeItem.IsEnabled = profiles.SelectedItem is TenantProfile;
@@ -83,8 +86,16 @@ public sealed partial class MainWindow : Window
         main.Children.Add(new TextBlock { Text = "SIGN-IN CONTEXT", Foreground = Brushes.DimGray, FontSize = 12 });
         main.Children.Add(new TextBlock { Text = "Current Windows session", Margin = new(0, 8, 0, 4), FontWeight = FontWeights.SemiBold });
         main.Children.Add(new TextBlock { Text = "Saved profiles apply the connection and selected login type. Therefore handles sign-in.", TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 24) });
-        var apps = new System.Windows.Controls.Primitives.UniformGrid { Columns = 3 }; main.Children.Add(apps);
-        foreach (var name in new[] { "Navigator", "Designer", "Console" })
+        main.Children.Add(apps); RefreshApplications();
+        main.Children.Add(status);
+        main.Children.Add(new TextBlock { Text = "Open multiple apps with the same connection. Close clients before switching tenants or login settings.\nThe selected connection remains configured after launch.", Foreground = Brushes.DimGray, TextWrapping = TextWrapping.Wrap });
+        RefreshProfiles(); status.Text = "Choose a saved tenant, or add your first connection.";
+        InitializeCompactMode(sidebar, main, title, tenantLabel);
+    }
+    void RefreshApplications()
+    {
+        apps.Children.Clear();
+        foreach (var name in VisibleApplications())
         {
             var panel = new StackPanel { Margin = new(12) };
             panel.Children.Add(new Image { Source = new BitmapImage(new Uri($"pack://application:,,,/assets/icons/{name.ToLowerInvariant()}.png")), Width = 32, Height = 32, HorizontalAlignment = HorizontalAlignment.Left, Margin = new(0, 0, 0, 12) });
@@ -92,10 +103,6 @@ public sealed partial class MainWindow : Window
             panel.Children.Add(Button("Launch", (_, _) => Launch(name), true));
             apps.Children.Add(new Border { Background = Brushes.White, BorderBrush = Brushes.LightGray, BorderThickness = new(1), CornerRadius = new(8), Margin = new(0, 0, 10, 0), Child = panel });
         }
-        main.Children.Add(status);
-        main.Children.Add(new TextBlock { Text = "Open multiple apps with the same connection. Close clients before switching tenants or login settings.\nThe selected connection remains configured after launch.", Foreground = Brushes.DimGray, TextWrapping = TextWrapping.Wrap });
-        RefreshProfiles(); status.Text = "Choose a saved tenant, or add your first connection.";
-        InitializeCompactMode(sidebar, main, title, tenantLabel);
     }
     static Button Button(string text, RoutedEventHandler click, bool primary = false)
     {
