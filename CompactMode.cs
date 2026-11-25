@@ -14,7 +14,13 @@ public sealed partial class MainWindow
     {
         settings.Window ??= new WindowPreferences();
         var caption = new TextBlock { Text = "∴  Therefore Launcher", FontSize = 21, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-        var modeToggle = new Button { Padding = new(8, 5, 8, 5), Margin = new(8, 0, 0, 0), Background = Brushes.White, BorderBrush = Brushes.LightGray, ToolTip = "Switch between full window and tenant strip" };
+        var modeIcon = new System.Windows.Shapes.Path
+        {
+            Width = 18, Height = 18, Stretch = Stretch.Uniform, Stroke = Foreground,
+            StrokeThickness = 1.7, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round, IsHitTestVisible = false
+        };
+        var modeToggle = new Button { Content = modeIcon, Width = 32, Height = 32, Padding = new(6), Margin = new(8, 0, 0, 0), Background = Brushes.White, BorderBrush = Brushes.LightGray };
         var chrome = new DockPanel();
         DockPanel.SetDock(modeToggle, Dock.Right); chrome.Children.Add(modeToggle); chrome.Children.Add(caption); title.Child = chrome;
         var compactStatus = new TextBlock { FontSize = 12, Foreground = Brushes.DimGray, Margin = new(2, 6, 2, 2), TextTrimming = TextTrimming.CharacterEllipsis };
@@ -57,7 +63,11 @@ public sealed partial class MainWindow
             shell.LastChildFill = true;
             profiles.ItemContainerStyle = (Style)Resources[compact ? "CompactTenantItemStyle" : "TenantItemStyle"];
             profiles.ItemTemplate = (DataTemplate)Resources[compact ? "CompactTenantItemTemplate" : "TenantItemTemplate"];
-            modeToggle.Content = compact ? "Full" : "Compact";
+            modeIcon.Data = Geometry.Parse(compact
+                ? "M2,7 V2 H7 M2,2 L8,8 M12,17 H17 V12 M17,17 L11,11"
+                : "M2,2 L8,8 M3,8 H8 V3 M17,17 L11,11 M11,16 V11 H16");
+            modeToggle.ToolTip = compact ? "Full window" : "Compact mode";
+            System.Windows.Automation.AutomationProperties.SetName(modeToggle, compact ? "Full window" : "Compact mode");
             caption.FontSize = compact ? 14 : 21;
             title.Padding = compact ? new Thickness(10, 7, 10, 7) : new Thickness(24, 14, 24, 14);
             profiles.ToolTip = compact ? "Double-click or Enter: Navigator. Right-click or ⋯: choose app. Drag to reorder." : "Drag tenants to reorder, or press Ctrl+Up / Ctrl+Down.";
@@ -83,7 +93,8 @@ public sealed partial class MainWindow
             var item = new MenuItem
             {
                 Header = app,
-                Icon = new Image { Source = new BitmapImage(new Uri($"pack://application:,,,/assets/icons/{app.ToLowerInvariant()}.png")), Width = 20, Height = 20 },
+                Style = (Style)Resources["LargeAppMenuItemStyle"],
+                Icon = new Image { Source = new BitmapImage(new Uri($"pack://application:,,,/assets/icons/{app.ToLowerInvariant()}.png")), Width = 32, Height = 32 },
                 InputGestureText = app == "Navigator" ? "Enter" : ""
             };
             item.Click += (_, _) => Launch(app); appMenu.Items.Add(item);

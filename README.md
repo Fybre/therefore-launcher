@@ -24,11 +24,11 @@ Profiles and the installation folder override are saved to `%LOCALAPPDATA%\There
 
 ## Compact mode
 
-Click **Compact** in the header to switch to a narrow tenant strip. Tenant names
+Click the collapse icon in the header (tooltip **Compact mode**) to switch to a narrow tenant strip. Tenant names
 are shown without connection details. Right-click a tenant or click its **⋯**
 button to choose Navigator, Designer or Console using the actual application
-icons. Double-click a tenant or press Enter to launch Navigator. The menu also
-provides profile editing; **Full** restores the detailed window. Drag reordering
+icons at 32×32 pixels and taller menu rows. Double-click a tenant or press Enter to launch Navigator. The menu also
+provides profile editing; the expand icon (tooltip **Full window**) restores the detailed window. Drag reordering
 and the Add/Edit/More toolbar remain available. Mode and separate window sizes
 are saved locally. App menus identify the selected tenant; connection switching
 uses the same safeguards in both modes.
