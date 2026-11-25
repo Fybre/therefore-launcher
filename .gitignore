@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+website/
+releases/
+auth-baseline.json
+*.user
+*.suo
