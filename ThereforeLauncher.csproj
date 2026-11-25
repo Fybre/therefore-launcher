@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>assets/icons/launcher.ico</ApplicationIcon>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <DefaultItemExcludes>$(DefaultItemExcludes);website/**;releases/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup><Resource Include="assets/icons/*.png" /><Resource Include="assets/icons/launcher.ico" /><Compile Remove="checks/**/*.cs" /></ItemGroup>

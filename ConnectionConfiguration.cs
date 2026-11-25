@@ -14,6 +14,11 @@ public static class ConnectionConfiguration
         };
         if (profile.AuthenticationMode == 2)
             foreach (var (name, value) in profile.Oidc!.RegistryValues()) values.Add(name, value);
+        if (profile.AuthenticationMode == 0 && profile.ProtectedLogin is not null)
+        {
+            var login = SavedLogin.Read(profile.ProtectedLogin);
+            values["User"] = login.User; values["Token"] = login.Token;
+        }
         return values;
     }
 

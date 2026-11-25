@@ -98,3 +98,22 @@ var restoredPreferences = JsonSerializer.Deserialize<Settings>(JsonSerializer.Se
 Check(restoredPreferences.Window.CompactMode && restoredPreferences.Window.CompactWidth == 310 && restoredPreferences.Window.FullWidth == 1100, "Window mode and independent dimensions must survive serialization.");
 Check(!JsonSerializer.Deserialize<Settings>("{\"Profiles\":[]}")!.Window.CompactMode, "Older settings must open in full mode by default.");
 Console.WriteLine("Compact preferences and Entra v2 capture checks passed.");
+var passwordProfile = new TenantProfile("Password", "example", 0);
+var loginSource = ConnectionConfiguration.ValuesFor(passwordProfile);
+loginSource["User"] = "test-account"; loginSource["Token"] = "opaque-native-test-token";
+var encryptedLogin = SavedLogin.Capture(passwordProfile, name => loginSource.GetValueOrDefault(name));
+Check(!encryptedLogin.Contains("test-account") && !encryptedLogin.Contains("opaque-native-test-token"), "Saved login must be encrypted.");
+var withLogin = passwordProfile with { ProtectedLogin = encryptedLogin };
+var loadedLogin = JsonSerializer.Deserialize<TenantProfile>(JsonSerializer.Serialize(withLogin))!;
+var loginValues = ConnectionConfiguration.ValuesFor(loadedLogin);
+Check((string)loginValues["User"] == "test-account" && (string)loginValues["Token"] == "opaque-native-test-token", "Saved native login must survive encryption and serialization.");
+Check(!ConnectionConfiguration.Matches(loginValues, name => name == "User" ? "other-account" : loginValues.GetValueOrDefault(name)), "Different saved accounts must require a guarded switch.");
+loginSource["Tenant"] = "other";
+bool wrongConnectionBlocked = false;
+try { SavedLogin.Capture(passwordProfile, name => loginSource.GetValueOrDefault(name)); } catch (InvalidOperationException) { wrongConnectionBlocked = true; }
+Check(wrongConnectionBlocked, "Must not capture another tenant's login.");
+loginSource["Tenant"] = "example"; loginSource["Token"] = "";
+bool missingLoginBlocked = false;
+try { SavedLogin.Capture(passwordProfile, name => loginSource.GetValueOrDefault(name)); } catch (InvalidOperationException) { missingLoginBlocked = true; }
+Check(missingLoginBlocked, "Missing remembered logins must be rejected.");
+Console.WriteLine("Saved login checks passed: Windows encryption, serialization, account switching, connection validation and missing login handling.");

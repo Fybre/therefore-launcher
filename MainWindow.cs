@@ -139,6 +139,34 @@ public sealed partial class MainWindow : Window
         var options = new[] { new LoginOption(0, "Username and password"), new LoginOption(2, "Entra ID") };
         var login = new ComboBox { ItemsSource = options, DisplayMemberPath = "Label", SelectedItem = options.FirstOrDefault(x => x.Mode == existing?.AuthenticationMode), Padding = new(8), Margin = new(0, 5, 0, 8) };
         panel.Children.Add(login);
+        var protectedLogin = existing?.ProtectedLogin;
+        var loginPanel = new StackPanel(); panel.Children.Add(loginPanel);
+        var savedLoginStatus = new TextBlock { Text = protectedLogin is null ? "No login saved for this profile." : "A Therefore login is saved for this profile.", TextWrapping = TextWrapping.Wrap };
+        loginPanel.Children.Add(new TextBlock { Text = "Sign in to this connection in Therefore with Remember password enabled, then save that login here. Saved logins are encrypted for your Windows account.", TextWrapping = TextWrapping.Wrap, Margin = new(0, 4, 0, 8) });
+        loginPanel.Children.Add(savedLoginStatus);
+        loginPanel.Children.Add(Button("Save current Therefore login", (_, _) =>
+        {
+            try
+            {
+                var candidate = new TenantProfile(name.Text.Trim(), tenant.Text.Trim().ToLowerInvariant(), 0, null, server.Text.Trim());
+                using var hive = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
+                using var key = hive.OpenSubKey(@"Software\Therefore\Client")
+                    ?? throw new InvalidOperationException("Configure Therefore and sign in first.");
+                protectedLogin = SavedLogin.Capture(candidate, keyName => key.GetValue(keyName));
+                savedLoginStatus.Text = "Current Therefore login captured. Save the profile to keep it.";
+            }
+            catch (Exception ex) { savedLoginStatus.Text = ex.Message; }
+        }));
+        loginPanel.Children.Add(Button("Remove saved login", (_, _) =>
+        {
+            protectedLogin = null; savedLoginStatus.Text = "No login saved. Save the profile to apply this change.";
+        }));
+        void ClearSavedLogin()
+        {
+            protectedLogin = null; savedLoginStatus.Text = "Connection changed. Save its Therefore login again if needed.";
+        }
+        tenant.TextChanged += (_, _) => ClearSavedLogin();
+        server.TextChanged += (_, _) => ClearSavedLogin();
         var oidcPanel = new StackPanel(); panel.Children.Add(oidcPanel);
         TextBox Field(string label, string value)
         {
@@ -158,7 +186,11 @@ public sealed partial class MainWindow : Window
         // Match Therefore's dependency without silently changing saved values.
         void UpdateSso() => sso.IsEnabled = browser.IsChecked != true;
         browser.Checked += (_, _) => UpdateSso(); browser.Unchecked += (_, _) => UpdateSso(); UpdateSso();
-        void UpdateVisibility() => oidcPanel.Visibility = (login.SelectedItem as LoginOption)?.Mode == 2 ? Visibility.Visible : Visibility.Collapsed;
+        void UpdateVisibility()
+        {
+            oidcPanel.Visibility = (login.SelectedItem as LoginOption)?.Mode == 2 ? Visibility.Visible : Visibility.Collapsed;
+            loginPanel.Visibility = (login.SelectedItem as LoginOption)?.Mode == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
         login.SelectionChanged += (_, _) => UpdateVisibility(); UpdateVisibility();
         var validation = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new(0, 12, 0, 0) }; panel.Children.Add(validation);
         panel.Children.Insert(0, Button("Read current configuration", (_, _) =>
@@ -194,7 +226,7 @@ public sealed partial class MainWindow : Window
             {
                 try { editedOidc.Validate(); } catch (Exception ex) { validation.Text = ex.Message; return; }
             }
-            var replacement = new TenantProfile(name.Text.Trim(), subdomain, selectedLogin.Mode, selectedLogin.Mode == 2 ? editedOidc : null, server.Text.Trim());
+            var replacement = new TenantProfile(name.Text.Trim(), subdomain, selectedLogin.Mode, selectedLogin.Mode == 2 ? editedOidc : null, server.Text.Trim()) { ProtectedLogin = selectedLogin.Mode == 0 ? protectedLogin : null };
             try { replacement.Validate(); } catch (Exception ex) { validation.Text = ex.Message; return; }
             var updated = settings.Profiles.ToList();
             if (existing is null) updated.Add(replacement); else updated[updated.IndexOf(existing)] = replacement;

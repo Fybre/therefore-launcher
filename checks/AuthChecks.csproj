@@ -2,4 +2,5 @@
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
   <ItemGroup><Compile Include="../Launcher.cs" Link="Launcher.cs" /><Compile Include="../OidcSettings.cs" Link="OidcSettings.cs" /><Compile Include="../ConnectionConfiguration.cs" Link="ConnectionConfiguration.cs" /><Compile Include="../ClientDetection.cs" Link="ClientDetection.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../ProfileOrder.cs" Link="ProfileOrder.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../SavedLogin.cs" Link="SavedLogin.cs" /></ItemGroup>
 </Project>

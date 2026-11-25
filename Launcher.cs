@@ -8,6 +8,7 @@ namespace ThereforeLauncher;
 
 public sealed record TenantProfile(string Name, string Tenant, int? AuthenticationMode = null, OidcSettings? Oidc = null, string? ServerUrl = null)
 {
+    public string? ProtectedLogin { get; init; }
     [System.Text.Json.Serialization.JsonIgnore]
     public string TenantSubtitle => string.Equals(Name.Trim(), Tenant, StringComparison.OrdinalIgnoreCase) ? "" : Tenant;
     public string LoginType => AuthenticationMode switch { null => "Configuration required", 0 => "Username and password", 2 => "Entra ID", _ => "Unsupported login type" };
@@ -100,6 +101,12 @@ public static class Launcher
                     string.Join(", ", blockers.Select(p => $"{p.Name}.exe (PID {p.Id}{(p.HasWindow ? "" : ", background process")})")) +
                     ". Close them before changing the tenant or login settings. Apps using the current configuration can be launched together.");
             var previous = new Dictionary<string, (object? Value, RegistryValueKind Kind)>();
+            // A connection switch must never carry another profile's remembered
+            // password login into a profile without a saved login.
+            if (profile.AuthenticationMode == 0 && profile.ProtectedLogin is null)
+            {
+                desired["User"] = ""; desired["Token"] = "";
+            }
             foreach (var name in desired.Keys)
             {
                 var value = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
