@@ -22,6 +22,21 @@ In Add tenant or Edit selected, click **Read current configuration** after savin
 
 Profiles and the installation folder override are saved to `%LOCALAPPDATA%\ThereforeLauncher\profiles.json`. Therefore handles authentication in the current Windows account.
 
+## Compact mode
+
+Click **Compact** in the header to switch to a narrow tenant strip. Tenant names
+are shown without connection details. Right-click a tenant or click its **⋯**
+button to choose Navigator, Designer or Console using the actual application
+icons. Double-click a tenant or press Enter to launch Navigator. The menu also
+provides profile editing; **Full** restores the detailed window. Drag reordering
+and the Add/Edit/More toolbar remain available. Mode and separate window sizes
+are saved locally. App menus identify the selected tenant; connection switching
+uses the same safeguards in both modes.
+
+Entra authorization and token URLs are captured and reapplied exactly, including
+v1 and v2.0 endpoints. The launcher does not upgrade or replace saved endpoints
+automatically, because they belong to each individual tenant configuration.
+
 Drag tenant tiles above or below one another to reorder them. A yellow insertion line marks the drop position; dragging near the list edges scrolls longer lists. The order is saved immediately and retained on restart. You can also use **More → Move tenant up/down**, or select a tenant and press **Ctrl+Up / Ctrl+Down**. Reordering leaves the connection settings unchanged. If saving fails, the previous order is retained.
 
 The installation directory is detected from both registry views under `HKLM\Software\Therefore\Installation`, using `InstallDir64` or `InstallDir`, with a Program Files fallback. Use Installation folder to override it.

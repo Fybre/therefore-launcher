@@ -30,6 +30,15 @@ public sealed class Settings
 {
     public List<TenantProfile> Profiles { get; set; } = [];
     public string InstallDirectory { get; set; } = "";
+    public WindowPreferences Window { get; set; } = new();
+}
+public sealed class WindowPreferences
+{
+    public bool CompactMode { get; set; }
+    public double FullWidth { get; set; } = 1020;
+    public double FullHeight { get; set; } = 640;
+    public double CompactWidth { get; set; } = 320;
+    public double CompactHeight { get; set; } = 520;
 }
 public static class Launcher
 {

@@ -95,6 +95,7 @@ public sealed partial class MainWindow : Window
         main.Children.Add(status);
         main.Children.Add(new TextBlock { Text = "Open multiple apps with the same connection. Close clients before switching tenants or login settings.\nThe selected connection remains configured after launch.", Foreground = Brushes.DimGray, TextWrapping = TextWrapping.Wrap });
         RefreshProfiles(); status.Text = "Choose a saved tenant, or add your first connection.";
+        InitializeCompactMode(sidebar, main, title, tenantLabel);
     }
     static Button Button(string text, RoutedEventHandler click, bool primary = false)
     {
@@ -116,7 +117,11 @@ public sealed partial class MainWindow : Window
     {
         if (profiles.SelectedItem is not TenantProfile p) { status.Text = "Select a tenant first."; return; }
         try { Launcher.Launch(p, app, settings.InstallDirectory); status.Text = $"Started {app} for {p.Name}. Complete sign-in in Therefore."; }
-        catch (Exception ex) { status.Text = ex.Message; }
+        catch (Exception ex)
+        {
+            status.Text = ex.Message;
+            if (settings.Window.CompactMode) MessageBox.Show(this, ex.Message, "Unable to launch Therefore", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
     void Edit(TenantProfile? existing)
     {

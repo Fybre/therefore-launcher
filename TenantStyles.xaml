@@ -56,4 +56,18 @@
             </DataTrigger>
         </DataTemplate.Triggers>
     </DataTemplate>
+    <Style x:Key="CompactTenantItemStyle" TargetType="ListBoxItem" BasedOn="{StaticResource TenantItemStyle}">
+        <Setter Property="MinHeight" Value="42" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+    <DataTemplate x:Key="CompactTenantItemTemplate">
+        <DockPanel LastChildFill="True">
+            <Button DockPanel.Dock="Right" Tag="TenantLaunchMenu" Content="⋯" Width="28" Height="28"
+                    Margin="6,0,0,0" Padding="0" Background="Transparent" BorderThickness="0"
+                    ToolTip="Choose an application" AutomationProperties.Name="Choose an application"
+                    FontSize="18" />
+            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        </DockPanel>
+    </DataTemplate>
 </ResourceDictionary>

@@ -84,3 +84,17 @@ Check(ReferenceEquals(reordered[0], duplicates[1]), "Reordering must preserve th
 Check(JsonSerializer.Deserialize<List<TenantProfile>>(JsonSerializer.Serialize(reordered))!.SequenceEqual(reordered), "Profile order must survive serialization.");
 Check(tenants.SequenceEqual(new[] { "A", "B", "C", "D" }), "Reordering must leave the original list available for rollback.");
 Console.WriteLine("Profile reordering checks passed: moves in both directions, boundaries, duplicates, serialization and original-list preservation.");
+var v2 = oidc with
+{
+    AuthorizationEndpoint = "https://login.microsoftonline.com/example.onmicrosoft.com/oauth2/v2.0/authorize",
+    TokenEndpoint = "https://login.microsoftonline.com/example.onmicrosoft.com/oauth2/v2.0/token",
+    Scopes = "openid;profile;email", EnablePkce = true, UseBrowser = false, UseWindowsSso = true
+};
+var v2Values = v2.RegistryValues();
+var capturedV2 = OidcSettings.Read(name => v2Values.GetValueOrDefault(name));
+Check(capturedV2 == v2, "Entra v2 endpoints, scopes and SSO flags must be preserved exactly.");
+var preferences = new Settings { Window = new WindowPreferences { CompactMode = true, CompactWidth = 310, CompactHeight = 480, FullWidth = 1100, FullHeight = 700 } };
+var restoredPreferences = JsonSerializer.Deserialize<Settings>(JsonSerializer.Serialize(preferences))!;
+Check(restoredPreferences.Window.CompactMode && restoredPreferences.Window.CompactWidth == 310 && restoredPreferences.Window.FullWidth == 1100, "Window mode and independent dimensions must survive serialization.");
+Check(!JsonSerializer.Deserialize<Settings>("{\"Profiles\":[]}")!.Window.CompactMode, "Older settings must open in full mode by default.");
+Console.WriteLine("Compact preferences and Entra v2 capture checks passed.");

@@ -20,6 +20,7 @@ public sealed partial class MainWindow
         profiles.ToolTip = "Drag tenants to reorder, or select a tenant and press Ctrl+Up / Ctrl+Down.";
         profiles.PreviewMouseLeftButtonDown += (_, e) =>
         {
+            if (IsMenuButton(e.OriginalSource as DependencyObject)) { dragProfile = null; return; }
             dragStart = e.GetPosition(profiles);
             dragProfile = (ItemsControl.ContainerFromElement(profiles, e.OriginalSource as DependencyObject) as ListBoxItem)?.DataContext as TenantProfile;
         };
