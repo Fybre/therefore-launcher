@@ -10,6 +10,16 @@ Native Windows WPF launcher for saved Therefore Online tenant connections. The i
 
 Download the EXE for your Windows architecture and run it. No additional launcher files or .NET installation are needed. Your tenant profiles remain in Local AppData when replacing the EXE.
 
+### Windows SmartScreen
+
+If Windows shows **“Windows protected your PC”** for the launcher downloaded from this repository:
+
+1. Right-click the downloaded launcher **EXE** in File Explorer and select **Properties**.
+2. On the **General** tab, tick **Unblock** if it is shown.
+3. Click **Apply**, then **OK**, and launch that same copy again.
+
+Only unblock a download you trust. A newly downloaded or updated EXE may need unblocking again. This applies to SmartScreen warnings; it does not remove administrator permission prompts.
+
 ## Single-file distribution
 
 Publish a self-contained EXE using `dotnet publish ThereforeLauncher.csproj -p:PublishProfile=Standalone -p:MSBuildEnableWorkloadResolver=false -r win-x64`. For Windows ARM devices, use `-r win-arm64`. Output is in `bin\Standalone\win-x64\` or `bin\Standalone\win-arm64\`. Distribute just `ThereforeLauncher.exe`; it includes the .NET runtime, application libraries and icons. The published version does not need a separate .NET installation. WPF native runtime components extract to a per-user temporary cache when needed; there are no DLLs to distribute beside the EXE. Profiles remain in `%LOCALAPPDATA%\ThereforeLauncher\profiles.json` so they survive replacing or moving the EXE. Therefore client applications still need to be installed separately.
