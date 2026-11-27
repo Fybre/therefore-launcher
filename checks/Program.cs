@@ -84,6 +84,35 @@ Check(ReferenceEquals(reordered[0], duplicates[1]), "Reordering must preserve th
 Check(JsonSerializer.Deserialize<List<TenantProfile>>(JsonSerializer.Serialize(reordered))!.SequenceEqual(reordered), "Profile order must survive serialization.");
 Check(tenants.SequenceEqual(new[] { "A", "B", "C", "D" }), "Reordering must leave the original list available for rollback.");
 Console.WriteLine("Profile reordering checks passed: moves in both directions, boundaries, duplicates, serialization and original-list preservation.");
+var workGroup = new TenantGroup { Name = "Work" };
+var clientsGroup = new TenantGroup { Name = "Clients", IsExpanded = false };
+var workA = profile with { Name = "Work A", GroupId = workGroup.Id, ProtectedLogin = "encrypted-fixture" };
+var workB = profile with { Name = "Work B", GroupId = workGroup.Id };
+var clientA = profile with { Name = "Client A", GroupId = clientsGroup.Id };
+var groupedProfiles = new[] { workA, workB, clientA, old };
+var movedToClients = ProfileOrder.MoveToGroup(groupedProfiles, workA, clientsGroup.Id, 0, p => p.GroupId == clientsGroup.Id);
+Check(movedToClients.Profiles.Where(p => p.GroupId == clientsGroup.Id).Select(p => p.Name).SequenceEqual(new[] { "Work A", "Client A" }), "Cross-group drops must insert before the target tenant.");
+Check(movedToClients.Selected == workA with { GroupId = clientsGroup.Id }, "Moving groups must preserve all connection and saved-login fields.");
+Check(groupedProfiles[0] == workA && workA.GroupId == workGroup.Id, "Group moves must preserve the old list and records for save rollback.");
+var appendToClients = ProfileOrder.MoveToGroup(groupedProfiles, workA, clientsGroup.Id, 1, p => p.GroupId == clientsGroup.Id);
+Check(appendToClients.Profiles.Where(p => p.GroupId == clientsGroup.Id).Select(p => p.Name).SequenceEqual(new[] { "Client A", "Work A" }), "Header drops must append to the destination group.");
+var withinGroup = ProfileOrder.MoveToGroup(groupedProfiles, workA, workGroup.Id, 2, p => p.GroupId == workGroup.Id);
+Check(withinGroup.Profiles.Where(p => p.GroupId == workGroup.Id).Select(p => p.Name).SequenceEqual(new[] { "Work B", "Work A" }), "Within-group moves must adjust insertion boundaries after removing the source.");
+var emptyGroupMove = ProfileOrder.MoveToGroup(groupedProfiles, workA, "empty", 0, _ => false);
+Check(emptyGroupMove.Selected.GroupId == "empty" && emptyGroupMove.Profiles.Count == groupedProfiles.Length, "Empty groups must accept tenants without losing profiles.");
+var ungroupedMove = ProfileOrder.MoveToGroup(groupedProfiles, workA, null, 1, p => p.GroupId is null);
+Check(ungroupedMove.Profiles.Where(p => p.GroupId is null).Select(p => p.Name).SequenceEqual(new[] { old.Name, workA.Name }), "Ungrouped must accept moves and preserve order.");
+var equalTenant = workA with { };
+var exactMove = ProfileOrder.MoveToGroup(new[] { workA, equalTenant }, equalTenant, clientsGroup.Id, 0, _ => false);
+Check(ReferenceEquals(exactMove.Profiles[0], workA) && exactMove.Profiles[1].GroupId == clientsGroup.Id, "Equal tenant records must move by instance identity.");
+var groupedSettings = new Settings { Groups = [workGroup, clientsGroup], Profiles = appendToClients.Profiles };
+groupedSettings.GroupOrder = ProfileOrder.Move(new[] { workGroup, clientsGroup, groupedSettings.Ungrouped }, 2, 0).Select(g => g.Id).ToList();
+var restoredGroups = JsonSerializer.Deserialize<Settings>(JsonSerializer.Serialize(groupedSettings))!;
+Check(restoredGroups.GroupOrder.SequenceEqual(new[] { "", workGroup.Id, clientsGroup.Id }), "Custom group order including Ungrouped must survive serialization.");
+Check(restoredGroups.Groups[1].IsExpanded == false && restoredGroups.Profiles.Single(p => p.Name == workA.Name).GroupId == clientsGroup.Id, "Group identity, assignments and collapsed state must survive serialization.");
+var legacySettings = JsonSerializer.Deserialize<Settings>("{\"Profiles\":[{\"Name\":\"Existing\",\"Tenant\":\"existing\"}]}")!;
+Check(legacySettings.Groups.Count == 0 && legacySettings.Profiles[0].GroupId is null && legacySettings.Ungrouped.Name == "Ungrouped", "Legacy settings must load into Ungrouped without migration loss.");
+Console.WriteLine("Tenant group checks passed: cross-group insertion, append, empty groups, within-group ordering, Ungrouped, duplicate instances, credentials, rollback and persistence.");
 var v2 = oidc with
 {
     AuthorizationEndpoint = "https://login.microsoftonline.com/example.onmicrosoft.com/oauth2/v2.0/authorize",

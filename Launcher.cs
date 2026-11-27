@@ -9,6 +9,7 @@ namespace ThereforeLauncher;
 public sealed record TenantProfile(string Name, string Tenant, int? AuthenticationMode = null, OidcSettings? Oidc = null, string? ServerUrl = null)
 {
     public string? ProtectedLogin { get; init; }
+    public string? GroupId { get; init; }
     [System.Text.Json.Serialization.JsonIgnore]
     public string TenantSubtitle => string.Equals(Name.Trim(), Tenant, StringComparison.OrdinalIgnoreCase) ? "" : Tenant;
     public string LoginType => AuthenticationMode switch { null => "Configuration required", 0 => "Username and password", 2 => "Entra ID", _ => "Unsupported login type" };
@@ -30,10 +31,20 @@ public sealed record TenantProfile(string Name, string Tenant, int? Authenticati
 public sealed class Settings
 {
     public List<TenantProfile> Profiles { get; set; } = [];
+    public List<TenantGroup> Groups { get; set; } = [];
+    public List<string> GroupOrder { get; set; } = [];
+    public TenantGroup Ungrouped { get; set; } = new() { Id = "", Name = "Ungrouped" };
     public string InstallDirectory { get; set; } = "";
     public WindowPreferences Window { get; set; } = new();
     public List<string> ApplicationOrder { get; set; } = ["Navigator", "Designer", "Console"];
     public List<string> HiddenApplications { get; set; } = [];
+}
+public sealed class TenantGroup
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Name { get; set; } = "";
+    public bool IsExpanded { get; set; } = true;
+    public override string ToString() => Name;
 }
 public sealed class WindowPreferences
 {

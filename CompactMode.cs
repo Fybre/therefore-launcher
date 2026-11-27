@@ -105,6 +105,7 @@ public sealed partial class MainWindow
         appMenu.Items.Add(new Separator());
         var edit = new MenuItem { Header = "Edit profile…" };
         edit.Click += (_, _) => { if (profiles.SelectedItem is TenantProfile p) Edit(p); }; appMenu.Items.Add(edit);
+        appMenu.Items.Add(CreateMoveToGroupMenu());
         }
         profiles.ContextMenu = appMenu;
         appMenu.Opened += (_, _) =>

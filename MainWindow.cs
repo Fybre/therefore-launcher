@@ -44,12 +44,16 @@ public sealed partial class MainWindow : Window
         var editAction = CompactAction("Edit", "Edit selected tenant", (_, _) => { if (profiles.SelectedItem is TenantProfile p) Edit(p); });
         actions.Children.Add(editAction);
         var menu = new ContextMenu();
+        var newGroup = new MenuItem { Header = "New group…" };
+        newGroup.Click += (_, _) => EditGroup(null); menu.Items.Add(newGroup);
+        menu.Items.Add(new Separator());
         var removeItem = new MenuItem { Header = "Remove selected tenant…" };
         removeItem.Click += (_, _) => Remove(); menu.Items.Add(removeItem);
         var moveUp = new MenuItem { Header = "Move tenant up", InputGestureText = "Ctrl+↑" };
         moveUp.Click += (_, _) => MoveSelectedProfile(-1); menu.Items.Add(moveUp);
         var moveDown = new MenuItem { Header = "Move tenant down", InputGestureText = "Ctrl+↓" };
         moveDown.Click += (_, _) => MoveSelectedProfile(1); menu.Items.Add(moveDown);
+        var moveGroup = CreateMoveToGroupMenu(); menu.Items.Add(moveGroup);
         menu.Items.Add(new Separator());
         var folderItem = new MenuItem { Header = "Installation folder…" };
         folderItem.Click += (_, _) => ChooseFolder(); menu.Items.Add(folderItem);
@@ -66,10 +70,12 @@ public sealed partial class MainWindow : Window
         menu.Opened += (_, _) =>
         {
             removeItem.IsEnabled = profiles.SelectedItem is TenantProfile;
-            moveUp.IsEnabled = profiles.SelectedIndex > 0;
-            moveDown.IsEnabled = profiles.SelectedIndex >= 0 && profiles.SelectedIndex < settings.Profiles.Count - 1;
+            moveUp.IsEnabled = CanMoveSelectedProfile(-1);
+            moveDown.IsEnabled = CanMoveSelectedProfile(1);
+            moveGroup.IsEnabled = profiles.SelectedItem is TenantProfile;
         };
         actions.Children.Add(moreAction);
+        InitializeTenantGroups();
         void UpdateActions() => editAction.IsEnabled = profiles.SelectedItem is TenantProfile;
         profiles.SelectionChanged += (_, _) => UpdateActions(); UpdateActions();
         var tenantLabel = new TextBlock { Text = "TENANT PROFILES", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = Brushes.DimGray, Margin = new(4, 8, 0, 16) };
@@ -89,7 +95,7 @@ public sealed partial class MainWindow : Window
         main.Children.Add(apps); RefreshApplications();
         main.Children.Add(status);
         main.Children.Add(new TextBlock { Text = "Open multiple apps with the same connection. Close clients before switching tenants or login settings.\nThe selected connection remains configured after launch.", Foreground = Brushes.DimGray, TextWrapping = TextWrapping.Wrap });
-        RefreshProfiles(); status.Text = "Choose a saved tenant, or add your first connection.";
+        RefreshProfiles();
         InitializeCompactMode(sidebar, main, title, tenantLabel);
     }
     void RefreshApplications()
@@ -111,7 +117,7 @@ public sealed partial class MainWindow : Window
     }
     void RefreshProfiles(TenantProfile? selection = null)
     {
-        profiles.ItemsSource = null; profiles.ItemsSource = settings.Profiles;
+        profiles.ItemsSource = null; profiles.ItemsSource = CreateGroupedProfiles();
         profiles.SelectedItem = selection ?? settings.Profiles.FirstOrDefault(); RefreshDetail();
     }
     void RefreshDetail()
@@ -147,8 +153,14 @@ public sealed partial class MainWindow : Window
         var login = new ComboBox { ItemsSource = options, DisplayMemberPath = "Label", SelectedItem = options.FirstOrDefault(x => x.Mode == existing?.AuthenticationMode), Padding = new(8), Margin = new(0, 5, 0, 8) };
         panel.Children.Add(login);
         var protectedLogin = existing?.ProtectedLogin;
+        string SavedLoginLabel()
+        {
+            if (protectedLogin is null) return "No login saved for this profile.";
+            try { return $"Saved login: {SavedLogin.Read(protectedLogin).User}"; }
+            catch (InvalidOperationException ex) { return ex.Message; }
+        }
         var loginPanel = new StackPanel(); panel.Children.Add(loginPanel);
-        var savedLoginStatus = new TextBlock { Text = protectedLogin is null ? "No login saved for this profile." : "A Therefore login is saved for this profile.", TextWrapping = TextWrapping.Wrap };
+        var savedLoginStatus = new TextBlock { Text = SavedLoginLabel(), TextWrapping = TextWrapping.Wrap };
         loginPanel.Children.Add(new TextBlock { Text = "Sign in to this connection in Therefore with Remember password enabled, then save that login here. Saved logins are encrypted for your Windows account.", TextWrapping = TextWrapping.Wrap, Margin = new(0, 4, 0, 8) });
         loginPanel.Children.Add(savedLoginStatus);
         loginPanel.Children.Add(Button("Save current Therefore login", (_, _) =>
@@ -160,7 +172,7 @@ public sealed partial class MainWindow : Window
                 using var key = hive.OpenSubKey(@"Software\Therefore\Client")
                     ?? throw new InvalidOperationException("Configure Therefore and sign in first.");
                 protectedLogin = SavedLogin.Capture(candidate, keyName => key.GetValue(keyName));
-                savedLoginStatus.Text = "Current Therefore login captured. Save the profile to keep it.";
+                savedLoginStatus.Text = SavedLoginLabel() + ". Save the profile to keep it.";
             }
             catch (Exception ex) { savedLoginStatus.Text = ex.Message; }
         }));
@@ -233,7 +245,7 @@ public sealed partial class MainWindow : Window
             {
                 try { editedOidc.Validate(); } catch (Exception ex) { validation.Text = ex.Message; return; }
             }
-            var replacement = new TenantProfile(name.Text.Trim(), subdomain, selectedLogin.Mode, selectedLogin.Mode == 2 ? editedOidc : null, server.Text.Trim()) { ProtectedLogin = selectedLogin.Mode == 0 ? protectedLogin : null };
+            var replacement = new TenantProfile(name.Text.Trim(), subdomain, selectedLogin.Mode, selectedLogin.Mode == 2 ? editedOidc : null, server.Text.Trim()) { ProtectedLogin = selectedLogin.Mode == 0 ? protectedLogin : null, GroupId = existing?.GroupId };
             try { replacement.Validate(); } catch (Exception ex) { validation.Text = ex.Message; return; }
             var updated = settings.Profiles.ToList();
             if (existing is null) updated.Add(replacement); else updated[updated.IndexOf(existing)] = replacement;

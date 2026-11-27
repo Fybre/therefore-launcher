@@ -32,6 +32,12 @@ In Add tenant or Edit selected, click **Read current configuration** after savin
 
 Profiles and the installation folder override are saved to `%LOCALAPPDATA%\ThereforeLauncher\profiles.json`. Therefore handles authentication in the current Windows account.
 
+## Tenant groups
+
+Use **More → New group…** to create groups such as Work or Clients. Existing connections appear under **Ungrouped**. Group headers show tenant counts and collapse or expand in both window modes; groups and their expanded state are saved locally. Drag group headers above or below other groups to reorder them, or use **Move group up/down** in a group's **⋯** menu. This includes Ungrouped, and the order is remembered across restarts. Use the same menu to rename or delete a custom group. Deleting a group keeps its tenants under Ungrouped.
+
+Drag a tenant above or below another tenant to reorder it or move it into that tenant's group. Drop on a group header to append it to that group, including empty or collapsed groups; the destination expands after the move. A gold line marks the drop target. You can also use **More → Move to group**, or **Move to group** in a tenant's compact app menu. **Ctrl+Up / Ctrl+Down** reorder within the current group. Moving tenants preserves their connection settings and saved logins; failed saves retain the previous group and order.
+
 ## Compact mode
 
 Use **More → Application icons…** to reorder Navigator, Designer and Console with the up/down buttons, or uncheck an app to hide it. Save applies the choices to the full-window tiles and compact app menus and remembers them across restarts. **Restore defaults** shows all three apps in their original order. In compact mode, double-click and Enter launch the first visible app. Hiding an icon does not uninstall the application.
